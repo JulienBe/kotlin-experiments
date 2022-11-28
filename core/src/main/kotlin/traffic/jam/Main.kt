@@ -15,6 +15,7 @@ class Main : ApplicationAdapter() {
     private lateinit var batch: SpriteBatch
     private lateinit var image: Texture
     private lateinit var cam: OrthographicCamera
+    var state = State.START
 
     override fun create() {
         batch = SpriteBatch()
@@ -22,6 +23,7 @@ class Main : ApplicationAdapter() {
         cam = OrthographicCamera(dim.wF, dim.hF)
         cam.position.set(dim.hwF, dim.hhF, 0f)
         cam.update()
+        Gdx.input.inputProcessor = InputHandler(this)
     }
 
     override fun render() {
@@ -30,11 +32,14 @@ class Main : ApplicationAdapter() {
         batch.begin()
         batch.projectionMatrix = cam.combined
         runBlocking {
-            things.forEach {
-                scope.launch {
-                    it.move(Gdx.graphics.deltaTime)
-                    it.checkWallCollide(dim)
+            if (state == State.PLAY)
+                things.forEach {
+                    scope.launch {
+                        it.move(Gdx.graphics.deltaTime)
+                        it.checkWallCollide(dim)
+                    }
                 }
+            things.forEach {
                 it.draw(batch, image)
             }
         }
@@ -48,8 +53,12 @@ class Main : ApplicationAdapter() {
         image.dispose()
     }
 
+    fun newState(state: State) {
+        this.state = state
+    }
+
     companion object {
-        const val SCALE = 5
+        const val SCALE = 10
         val dim: Dimension = Dimension(160, 144)
     }
 }
