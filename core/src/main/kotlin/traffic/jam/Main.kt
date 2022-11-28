@@ -6,8 +6,11 @@ import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 
+import kotlinx.coroutines.*
+
 class Main : ApplicationAdapter() {
     private val things = Array(2000) { ThingThatMoves() }
+    private val scope = CoroutineScope(Dispatchers.Default)
     private lateinit var batch: SpriteBatch
     private lateinit var image: Texture
     private var width = 0
@@ -24,15 +27,21 @@ class Main : ApplicationAdapter() {
         Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
         batch.begin()
-        things.forEach {
-            it.move(Gdx.graphics.deltaTime)
-            it.checkWallCollide(width, height)
-            it.draw(batch, image)
+        runBlocking {
+            things.forEach {
+                scope.launch {
+                    it.move(Gdx.graphics.deltaTime)
+                    it.checkWallCollide(width, height)
+                }
+                it.draw(batch, image)
+            }
         }
         batch.end()
+        println("FPS: ${Gdx.graphics.framesPerSecond}")
     }
 
     override fun dispose() {
+        scope.cancel()
         batch.dispose()
         image.dispose()
     }
