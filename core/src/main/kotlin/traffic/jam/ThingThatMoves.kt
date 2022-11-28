@@ -27,15 +27,15 @@ class ThingThatMoves {
         }
     }
 
-    fun checkWallCollide(width: Int, height: Int) {
+    fun checkWallCollide(dim: Dimension) {
         val currentPos = pos[posIndex]
-        if (currentPos.x < 0 || currentPos.x > width) {
+        if (currentPos.x < 0 || currentPos.x > dim.w) {
             dir.x *= -1
-            currentPos.set(currentPos.x.coerceIn(0f, width.toFloat()), currentPos.y)
+            currentPos.set(currentPos.x.coerceIn(0f, dim.wF), currentPos.y)
         }
-        if (currentPos.y < 0 || currentPos.y > height) {
+        if (currentPos.y < 0 || currentPos.y > dim.h) {
             dir.y *= -1
-            currentPos.set(currentPos.x, currentPos.y.coerceIn(0f, height.toFloat()))
+            currentPos.set(currentPos.x, currentPos.y.coerceIn(0f, dim.hF))
         }
     }
 
