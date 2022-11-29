@@ -16,7 +16,7 @@ class Graphics {
 
     val batch = SpriteBatch()
     val defaultShader = batch.shader
-    private val cam = OrthographicCamera(dim.wF, dim.hF)
+    private val cam = OrthographicCamera(dim.wf, dim.hf)
     private val frameBuffer = FrameBuffer(Pixmap.Format.RGBA8888, dim.w, dim.h, false)
 
     init {
@@ -42,10 +42,10 @@ class Graphics {
         batch.begin()
         val texture = frameBuffer.colorBufferTexture
         texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
-        batch.draw(frameBuffer.colorBufferTexture, 0f, dim.hF, dim.wF, -dim.hF) // that's the flip
+        batch.draw(frameBuffer.colorBufferTexture, 0f, dim.hf, dim.wf, -dim.hf) // that's the flip
         batch.end()
 
-        println("FPS: ${Gdx.graphics.framesPerSecond}")
+//        println("FPS: ${Gdx.graphics.framesPerSecond}")
     }
 
     fun dispose() {

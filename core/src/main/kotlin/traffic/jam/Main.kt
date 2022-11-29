@@ -17,12 +17,14 @@ class Main : ApplicationAdapter() {
         image = Texture("square.png")
         Gdx.input.inputProcessor = InputHandler(this)
         graphics = Graphics()
+        ratio = Dimension(dim.wf / Gdx.graphics.width, dim.hf / Gdx.graphics.height)
         for (x in 0..dim.w)
             for (y in 0..dim.h)
                 gums.add(Gum.obtain(x, y))
     }
 
     override fun render() {
+        println("ratio: $ratio")
         graphics.draw {
             when (state) {
                 State.START -> {
@@ -60,5 +62,6 @@ class Main : ApplicationAdapter() {
     companion object {
         const val SCALE = 5
         val dim: Dimension = Dimension(160, 144)
+        var ratio: Dimension = Dimension(160, 144)
     }
 }
