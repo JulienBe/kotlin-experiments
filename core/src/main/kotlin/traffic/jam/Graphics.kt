@@ -15,6 +15,7 @@ import traffic.jam.Main.Companion.dim
 class Graphics {
 
     val batch = SpriteBatch()
+    val defaultShader = batch.shader
     private val cam = OrthographicCamera(dim.wF, dim.hF)
     private val frameBuffer = FrameBuffer(Pixmap.Format.RGBA8888, dim.w, dim.h, false)
 

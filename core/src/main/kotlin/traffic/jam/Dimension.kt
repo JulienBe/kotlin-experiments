@@ -1,6 +1,8 @@
 package traffic.jam
 
 data class Dimension(val w: Int, val h: Int) {
+    constructor(w: Int) : this(w, w)
+
     val wF: Float = w.toFloat()
     val hF: Float = h.toFloat()
     val hw: Int = w / 2
