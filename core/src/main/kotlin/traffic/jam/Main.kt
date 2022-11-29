@@ -18,13 +18,12 @@ class Main : ApplicationAdapter() {
         Gdx.input.inputProcessor = InputHandler(this)
         graphics = Graphics()
         ratio = Dimension(dim.wf / Gdx.graphics.width, dim.hf / Gdx.graphics.height)
-        for (x in 0..dim.w)
-            for (y in 0..dim.h)
+        for (x in 0..dim.w step Gum.dim.w)
+            for (y in 0..dim.h step Gum.dim.h)
                 gums.add(Gum.obtain(x, y))
     }
 
     override fun render() {
-        println("ratio: $ratio")
         graphics.draw {
             when (state) {
                 State.START -> {
