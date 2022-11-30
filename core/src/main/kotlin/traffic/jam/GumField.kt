@@ -1,6 +1,5 @@
 package traffic.jam
 
-import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import ktx.collections.GdxArray
@@ -21,9 +20,7 @@ class GumField(val gumPerW: Int, val gumPerH: Int) {
 
     fun draw(batch: SpriteBatch, image: Texture) {
         fieldGums.forEach {
-            if (it != Gum.none) {
-                it.draw(batch, image)
-            }
+            it.draw(batch, image)
         }
         if (selectedGum != Gum.none)
             selectedGum.drawSelected(batch, image)
@@ -55,7 +52,8 @@ class GumField(val gumPerW: Int, val gumPerH: Int) {
     private fun shouldMerge(origin: Gum, x: Int, y: Int): Boolean =
         x in 0..Main.gumPerW &&
         y in 0..Main.gumPerH &&
-        gum(x, y).sameTypeAs(origin)
+        gum(x, y).sameTypeAs(origin) &&
+        gum(x, y).mergeableState()
 
     private fun index(x: Int, y: Int) = x * gumPerH + y
     private fun gum(x: Int, y: Int) = fieldGums[index(x, y)]
@@ -70,7 +68,7 @@ class GumField(val gumPerW: Int, val gumPerH: Int) {
             for (y in 0 until gumPerH) {
                 for (x in 0 until gumPerW) {
                     val currentGum = gum(x, y)
-                    if (currentGum == Gum.none) continue
+                    if (!currentGum.mergeableState()) continue
 
                     mergeList.clear()
                     mergeList.add(currentGum)
@@ -93,7 +91,7 @@ class GumField(val gumPerW: Int, val gumPerH: Int) {
 
     private fun merge(mergeList: GdxArray<Gum>) {
         mergeList.forEach {
-            fieldGums[it.i] = Gum.none
+            fieldGums[it.i].beginMerge()
         }
     }
 

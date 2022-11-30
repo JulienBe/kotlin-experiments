@@ -3,6 +3,7 @@ package traffic.jam
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.utils.Pool
+import traffic.jam.GumState.*
 
 class Gum private constructor() {
 
@@ -23,12 +24,17 @@ class Gum private constructor() {
     private var color = Palette.rand()
     private var pos: Pos = Pos(0f, 0f)
     private var index: Int = 0
+    private var state = APPEARING
     val x: Int get() = pos.x
     val y: Int get() = pos.y
     val i: Int get() = index
 
 
     fun draw(batch: SpriteBatch, image: Texture) {
+        state.draw(this, batch, image)
+    }
+
+    fun drawInGame(batch: SpriteBatch, image: Texture) {
         batch.packedColor = color.f
         innerPos.forEach { batch.draw(image, pos, it) }
     }
@@ -56,6 +62,9 @@ class Gum private constructor() {
         index = tempIndex
         selected = false
     }
+    fun beginMerge() {
+        state = MERGING
+    }
 
     private fun index(index: Int): Gum {
         this.index = index
@@ -65,8 +74,14 @@ class Gum private constructor() {
         pos.update(newX, newY)
         return this
     }
+
+    private fun initDone(): Gum {
+        state = IN_GAME
+        return this
+    }
     fun posCopy(): Pos = pos.copy()
     fun sameTypeAs(gum: Gum): Boolean = gum.color == color
+    fun mergeableState(): Boolean = state.mergeable
 
     companion object {
         val dim = Dimension(16)
@@ -82,8 +97,10 @@ class Gum private constructor() {
             return pool.obtain()
                 .updatePos(x, y)
                 .index(index)
+                .initDone()
         }
     }
+
 
 }
 
