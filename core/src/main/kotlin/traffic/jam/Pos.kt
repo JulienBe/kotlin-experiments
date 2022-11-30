@@ -17,4 +17,12 @@ class Pos(var xf: Float, var yf: Float) {
         this.x = xf.toInt()
         this.y = yf.toInt()
     }
+
+    fun update(pos: Pos) {
+        update(pos.x, pos.y)
+    }
+
+    fun copy(): Pos {
+        return Pos(xf, yf)
+    }
 }

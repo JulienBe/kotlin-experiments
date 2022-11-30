@@ -1,12 +1,12 @@
 package traffic.jam
 
-import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.utils.Pool
-import kotlin.math.roundToInt
-class Gum private constructor(){
+
+class Gum private constructor() {
+
+    private var selected = false
     private var pos: Pos = Pos(0f, 0f)
     private var color = Palette.rand()
     private val outlinePos = List((outlineDim.w) * 4) {
@@ -23,29 +23,42 @@ class Gum private constructor(){
         Pos(it % innerDim.wf + 1, (it / innerDim.hf).toInt() + 1f) // need to clamp it
     }
 
-
     private fun updatePos(newX: Int, newY: Int): Gum {
         pos.update(newX, newY)
         return this
     }
 
     fun draw(batch: SpriteBatch, image: Texture) {
-//        batch.packedColor = color.next().f
-//        outlinePos.forEach { batch.draw(image, pos, it) }
         batch.packedColor = color.f
         innerPos.forEach { batch.draw(image, pos, it) }
     }
 
-    fun update() {
-        if (Gdx.input.justTouched() && Gdx.input.xClick().roundToInt() in pos.x..(pos.x + dim.w) && Gdx.input.yClick().roundToInt() in pos.y..(pos.y + dim.h)) {
-            color = Palette.rand()
+    fun clickDetect(x: Float, y: Float, onSelect: (Gum) -> Unit): Boolean {
+        if (x in pos.xf..(pos.xf + dim.wf) && y in pos.yf..(pos.yf + dim.hf)) {
+            selected = true
+            onSelect.invoke(this)
+            return true
         }
+        return false
     }
+
+    fun drawSelected(batch: SpriteBatch, image: Texture) {
+        batch.packedColor = color.next().f
+        outlinePos.forEach { batch.draw(image, pos, it) }
+    }
+
+    fun swapTo(other: Pos) {
+        pos.update(other)
+        selected = false
+    }
+
+    fun posCopy(): Pos = pos.copy()
 
     companion object {
         val dim = Dimension(8)
         val outlineDim = Dimension(dim.w - 1)
         val innerDim = Dimension(outlineDim.w - 1)
+        val none = Gum()
         private val pool: Pool<Gum> = object : Pool<Gum>() {
             override fun newObject(): Gum {
                 return Gum()
@@ -60,5 +73,3 @@ class Gum private constructor(){
 
 private fun SpriteBatch.draw(texture: Texture, pos: Pos, offset: Pos) = draw(texture, pos.xf + offset.xf, pos.yf + offset.yf, 1f, 1f)
 private fun SpriteBatch.draw(texture: Texture, pos: Pos) = draw(texture, pos.xf, pos.yf, 1f, 1f)
-private fun Input.xClick(): Float = x * Main.ratio.wf
-private fun Input.yClick(): Float = (Gdx.graphics.height - y) * Main.ratio.hf

@@ -7,6 +7,7 @@ import kotlinx.coroutines.*
 
 class Main : ApplicationAdapter() {
     private val gums = mutableListOf<Gum>()
+    private var selectedGum = Gum.none
     private val scope = CoroutineScope(Dispatchers.Default)
     private lateinit var image: Texture
     private lateinit var graphics: Graphics
@@ -30,10 +31,11 @@ class Main : ApplicationAdapter() {
 //                    drawText("Press space to start", 0f, 0f)
                 }
                 State.PLAY -> {
-                    for (gum in gums) {
-                        gum.update()
+                    gums.forEach { gum ->
                         gum.draw(graphics.batch, image)
                     }
+                    if (selectedGum != Gum.none)
+                        selectedGum.drawSelected(graphics.batch, image)
                 }
                 State.PAUSE -> {
 //                    drawText("Press space to resume", 0f, 0f)
@@ -45,6 +47,24 @@ class Main : ApplicationAdapter() {
 //                    drawText("Press space to restart", 0f, 0f)
                 }
             }
+        }
+    }
+
+    fun clicked(xClick: Float, yClick: Float) {
+        for (gum in gums) {
+            val clicked = gum.clickDetect(xClick, yClick) {
+                selectedGum = if (selectedGum == it) {
+                    Gum.none
+                } else if (selectedGum != Gum.none) {
+                    val itPos = it.posCopy()
+                    it.swapTo(selectedGum.posCopy())
+                    selectedGum.swapTo(itPos)
+                    Gum.none
+                } else {
+                    it
+                }
+            }
+            if (clicked) break
         }
     }
 
