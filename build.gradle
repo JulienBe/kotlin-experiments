@@ -29,6 +29,11 @@ allprojects {
 	apply plugin: 'idea'
 }
 
+ext {
+	// Update this version to match the latest KTX release:
+	ktxVersion = '1.11.0-rc2'
+}
+
 configure(subprojects) {
 	apply plugin: 'java-library'
 	apply plugin: 'kotlin'
@@ -37,6 +42,7 @@ configure(subprojects) {
 		options.incremental = true
 	}
 	dependencies {
+		api group: 'io.github.libktx', name: 'ktx-collections', version: ktxVersion
 		implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4'
 		// This follows advice from https://blog.gradle.org/log4j-vulnerability
 		constraints {
