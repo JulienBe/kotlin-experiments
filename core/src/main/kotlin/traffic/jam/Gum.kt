@@ -100,8 +100,6 @@ class Gum private constructor() {
                 .initDone()
         }
     }
-
-
 }
 
 private fun SpriteBatch.draw(texture: Texture, pos: Pos, offset: Pos) = draw(texture, pos.xf + offset.xf, pos.yf + offset.yf, 1f, 1f)

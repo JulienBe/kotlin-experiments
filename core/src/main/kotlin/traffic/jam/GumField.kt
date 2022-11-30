@@ -4,7 +4,7 @@ import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import ktx.collections.GdxArray
 
-class GumField(val gumPerW: Int, val gumPerH: Int) {
+class GumField(private val gumPerW: Int, private val gumPerH: Int) {
 
     private val fieldGums = Array(gumPerW * gumPerH) { Gum.none }
     private val mergeList = GdxArray<Gum>()
@@ -50,8 +50,8 @@ class GumField(val gumPerW: Int, val gumPerH: Int) {
     }
 
     private fun shouldMerge(origin: Gum, x: Int, y: Int): Boolean =
-        x in 0..Main.gumPerW &&
-        y in 0..Main.gumPerH &&
+        x in 0 until Main.gumPerW &&
+        y in 0 until Main.gumPerH &&
         gum(x, y).sameTypeAs(origin) &&
         gum(x, y).mergeableState()
 
@@ -67,26 +67,39 @@ class GumField(val gumPerW: Int, val gumPerH: Int) {
             // As the array is iterated from the bottom to the top, lower merges are prioritized
             for (y in 0 until gumPerH) {
                 for (x in 0 until gumPerW) {
-                    val currentGum = gum(x, y)
-                    if (!currentGum.mergeableState()) continue
-
-                    mergeList.clear()
-                    mergeList.add(currentGum)
-                    // iterate until it doesn't match
-                    var leftCheck = -1
-                    while (shouldMerge(currentGum,x + leftCheck, y)) {
-                        mergeList.add(gum(x + leftCheck, y))
-                        leftCheck--
-                    }
-                    // found any match
-                    if (mergeList.size > 1) {
-                        merge(mergeList)
-                        dirty = true
-                        return
+                    MatchPattern.values().forEach { pattern ->
+                        if (checkPattern(pattern, gum(x, y), x, y)) {
+                            dirty = true
+                            return
+                        }
                     }
                 }
             }
         }
+    }
+
+    /**
+     * Checks if the pattern matches the current gum
+     * @return true if the pattern matches, false otherwise
+     */
+    private fun checkPattern(pattern: MatchPattern, currentGum: Gum, x: Int, y: Int): Boolean {
+        if (!currentGum.mergeableState())
+            return false
+        pattern.offsets.forEach { offsetsSetHaHa ->
+            val noMatch = offsetsSetHaHa.any {
+                !shouldMerge(currentGum, x + it.x, y + it.y)
+            }
+            if (!noMatch) {
+                mergeList.clear()
+                mergeList.add(currentGum)
+                offsetsSetHaHa.forEach {
+                    mergeList.add(gum(x + it.x, y + it.y))
+                }
+                merge(mergeList)
+                return true
+            }
+        }
+        return false
     }
 
     private fun merge(mergeList: GdxArray<Gum>) {
