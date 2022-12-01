@@ -5,7 +5,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 
 enum class GumState(val mergeable: Boolean, val draw: (Gum, SpriteBatch, Texture) -> Unit) {
     APPEARING(false, { _, _, _ -> }),
-    IN_GAME(true, Gum::drawInGame),
+    DISAPPEARING(false, { _, _, _ -> }),
+    MOVING(false, Gum::inGame),
+    IN_GAME(true, Gum::inGame),
     MERGING(false, { _, _, _ -> }),
     MERGED(false, { _, _, _ -> });
 }

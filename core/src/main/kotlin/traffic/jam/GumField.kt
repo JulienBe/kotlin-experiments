@@ -10,7 +10,7 @@ class GumField(private val gumPerW: Int, private val gumPerH: Int) {
     private val mergeList = GdxArray<Gum>()
     private var selectedGum = Gum.none
     private var dirty = true
-    private var nextMergeCheck = 0L
+    private val mergePeriodic = PeriodicAction(MERGE_CHECK_DELAY) { lookForMerges() }
 
     init {
         for (y in 0 until gumPerH)
@@ -59,19 +59,21 @@ class GumField(private val gumPerW: Int, private val gumPerH: Int) {
     private fun gum(x: Int, y: Int) = fieldGums[index(x, y)]
 
     fun mergeCheck() {
-        if (dirty && System.currentTimeMillis() > nextMergeCheck) {
-            nextMergeCheck = System.currentTimeMillis() + mergeCheckDelay
-            dirty = false
-            // it will go through each gum, and resolve the first 'merge' that is found.
-            // The iterative approach is there to make cascading effects more apparent.
-            // As the array is iterated from the bottom to the top, lower merges are prioritized
-            for (y in 0 until gumPerH) {
-                for (x in 0 until gumPerW) {
-                    MatchPattern.values().forEach { pattern ->
-                        if (checkPattern(pattern, gum(x, y), x, y)) {
-                            dirty = true
-                            return
-                        }
+        if (dirty)
+            mergePeriodic.act()
+    }
+
+    private fun lookForMerges() {
+        dirty = false
+        // it will go through each gum, and resolve the first 'merge' that is found.
+        // The iterative approach is there to make cascading effects more apparent.
+        // As the array is iterated from the bottom to the top, lower merges are prioritized
+        for (y in 0 until gumPerH) {
+            for (x in 0 until gumPerW) {
+                MatchPattern.values().forEach { pattern ->
+                    if (checkPattern(pattern, gum(x, y), x, y)) {
+                        dirty = true
+                        return
                     }
                 }
             }
@@ -109,6 +111,6 @@ class GumField(private val gumPerW: Int, private val gumPerH: Int) {
     }
 
     companion object {
-        const val mergeCheckDelay = 1000L
+        const val MERGE_CHECK_DELAY = 1000L
     }
 }

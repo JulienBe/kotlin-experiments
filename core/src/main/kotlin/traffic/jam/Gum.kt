@@ -17,31 +17,44 @@ class Gum private constructor() {
         else
             Pos(0f, outlineDim.wf - (it - (outlineDim.w * 3)))
     }
-    private val innerPos = List(innerDim.w * innerDim.h) {
-        Pos(it % innerDim.wf + 1, (it / innerDim.hf).toInt() + 1f) // need to clamp it
+    private val innerParticles = List(innerDim.w * innerDim.h) {
+        GumParticle(Pos(it % innerDim.wf + 1, (it / innerDim.hf).toInt() + 1f)) // need to clamp it
     }
+    private val particlePeriodic = PeriodicAction(PARTICLE_DELAY) { particleAct() }
     private var selected = false
-    private var color = Palette.rand()
+    private var shades = Shades.rand()
     private var pos: Pos = Pos(0f, 0f)
-    private var index: Int = 0
+    private var arrayIndex: Int = 0
     private var state = APPEARING
-    val x: Int get() = pos.x
-    val y: Int get() = pos.y
-    val i: Int get() = index
+    private var currentParticleActIndex = 0
 
+    val i: Int get() = arrayIndex
 
     fun draw(batch: SpriteBatch, image: Texture) {
         state.draw(this, batch, image)
     }
 
-    fun drawInGame(batch: SpriteBatch, image: Texture) {
-        batch.packedColor = color.f
-        innerPos.forEach { batch.draw(image, pos, it) }
+    fun inGame(batch: SpriteBatch, image: Texture) {
+        innerParticles.forEach {
+            batch.packedColor = shades.colors[it.index].f
+            batch.draw(image, pos.xf + it.offset.xf, pos.yf + it.offset.yf, 1f, 1f)
+        }
+        particlePeriodic.act()
+    }
+
+    private fun particleAct() {
+        for (i in 0..6) {
+            val p = innerParticles[currentParticleActIndex++ % innerParticles.size]
+            if (p.index > 0) p.index--
+        }
     }
 
     fun clickDetect(x: Float, y: Float, onSelect: (Gum) -> Unit): Boolean {
         if (x in pos.xf..(pos.xf + dim.wf) && y in pos.yf..(pos.yf + dim.hf)) {
             selected = true
+            innerParticles.forEach {
+                it.index = Shades.MAX_COLOR_INDEX
+            }
             onSelect.invoke(this)
             return true
         }
@@ -49,7 +62,7 @@ class Gum private constructor() {
     }
 
     fun drawSelected(batch: SpriteBatch, image: Texture) {
-        batch.packedColor = color.next().f
+//        batch.packedColor = shades.next().f
         outlinePos.forEach { batch.draw(image, pos, it) }
     }
 
@@ -57,9 +70,9 @@ class Gum private constructor() {
         val temp = other.pos.copy()
         other.pos.update(pos)
         pos.update(temp)
-        val tempIndex = other.index
-        other.index = index
-        index = tempIndex
+        val tempIndex = other.arrayIndex
+        other.arrayIndex = arrayIndex
+        arrayIndex = tempIndex
         selected = false
     }
     fun beginMerge() {
@@ -67,7 +80,7 @@ class Gum private constructor() {
     }
 
     private fun index(index: Int): Gum {
-        this.index = index
+        this.arrayIndex = index
         return this
     }
     private fun updatePos(newX: Int, newY: Int): Gum {
@@ -79,15 +92,16 @@ class Gum private constructor() {
         state = IN_GAME
         return this
     }
-    fun posCopy(): Pos = pos.copy()
-    fun sameTypeAs(gum: Gum): Boolean = gum.color == color
+    fun sameTypeAs(gum: Gum): Boolean = gum.shades == shades
     fun mergeableState(): Boolean = state.mergeable
 
     companion object {
+        const val PARTICLE_DELAY = 16L
         val dim = Dimension(16)
         val outlineDim = Dimension(dim.w - 1)
         val innerDim = Dimension(outlineDim.w - 1)
         val none = Gum()
+
         private val pool: Pool<Gum> = object : Pool<Gum>() {
             override fun newObject(): Gum {
                 return Gum()
@@ -103,4 +117,3 @@ class Gum private constructor() {
 }
 
 private fun SpriteBatch.draw(texture: Texture, pos: Pos, offset: Pos) = draw(texture, pos.xf + offset.xf, pos.yf + offset.yf, 1f, 1f)
-private fun SpriteBatch.draw(texture: Texture, pos: Pos) = draw(texture, pos.xf, pos.yf, 1f, 1f)

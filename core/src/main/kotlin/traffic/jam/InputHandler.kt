@@ -6,9 +6,11 @@ import com.badlogic.gdx.Input.Keys
 import com.badlogic.gdx.InputAdapter
 import traffic.jam.State.*
 
-class InputHandler(val main: Main) : InputAdapter() {
+class InputHandler(private val main: Main) : InputAdapter() {
 
-    private var nextAllowedClick = 0L
+    private val clickPeriodic: PeriodicAction = PeriodicAction(CLICK_DELAY) {
+        main.clicked(Gdx.input.xClick(), Gdx.input.yClick())
+    }
 
     override fun keyDown(keycode: Int): Boolean {
         if (keycode == Keys.SPACE) {
@@ -23,10 +25,7 @@ class InputHandler(val main: Main) : InputAdapter() {
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-        if (nextAllowedClick < System.currentTimeMillis()) {
-            nextAllowedClick = System.currentTimeMillis() + CLICK_DELAY
-            main.clicked(Gdx.input.xClick(), Gdx.input.yClick())
-        }
+        clickPeriodic.act()
         return super.touchDown(screenX, screenY, pointer, button)
     }
 

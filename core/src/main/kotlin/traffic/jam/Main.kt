@@ -57,6 +57,7 @@ class Main : ApplicationAdapter() {
     }
 
     companion object {
+        const val COLORS_PER_SHADE: Int = 5
         const val SCALE = 5
         val dim: Dimension = Dimension(160, 144)
         var ratio: Dimension = Dimension(160, 144)

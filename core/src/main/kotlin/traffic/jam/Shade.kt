@@ -1,8 +1,9 @@
 package traffic.jam
 
 import com.badlogic.gdx.graphics.Color
+import traffic.jam.Main.Companion.COLORS_PER_SHADE
 
-enum class Palette(red: Int, green: Int, blue: Int) {
+enum class Shade(red: Int, green: Int, blue: Int) {
 
 //    BLACK(        0,   0, 0),  // 0
     DARK_GREY(   95,  87, 79), // 182
@@ -27,14 +28,25 @@ enum class Palette(red: Int, green: Int, blue: Int) {
     val color = Color(r, g, b, 1f)
     val f = color.toFloatBits()
 
-    fun next(): Palette {
+    fun next(): Shade {
         return values()[(ordinal + 1) % values().size]
+    }
+}
+enum class Shades(val colors: Array<Shade>) {
+    YELLOW(arrayOf(Shade.YELLOW, Shade.ORANGE, Shade.BROWN, Shade.DARK_PURPLE, Shade.DARK_BLUE)),
+    WHITE(arrayOf(Shade.WHITE, Shade.LIGHT_GREY, Shade.LAVENDER, Shade.DARK_GREY, Shade.DARK_BLUE)),
+    PINK(arrayOf(Shade.PINK, Shade.PINK_SKIN, Shade.RED, Shade.DARK_PURPLE, Shade.DARK_BLUE)),
+    GREEN(arrayOf(Shade.GREEN, Shade.DARK_GREEN, Shade.LAVENDER, Shade.BLUE, Shade.DARK_BLUE));
+    ;
+
+    init {
+        assert(colors.size == COLORS_PER_SHADE)
     }
 
     companion object {
-        fun rand(): Palette {
+        const val MAX_COLOR_INDEX = COLORS_PER_SHADE - 1
+        fun rand(): Shades {
             return values().random()
         }
     }
-
 }
