@@ -17,16 +17,15 @@ class Gum private constructor() {
         else
             Pos(0f, outlineDim.wf - (it - (outlineDim.w * 3)))
     }
-    private val innerParticles = List(innerDim.w * innerDim.h) {
+    internal val innerParticles = List(innerDim.w * innerDim.h) {
         GumParticle(Pos(it % innerDim.wf + 1, (it / innerDim.hf).toInt() + 1f)) // need to clamp it
     }
     private val particlePeriodic = PeriodicAction(PARTICLE_DELAY) { particleAct() }
-    private var selected = false
     private var shades = Shades.rand()
     private var pos: Pos = Pos(0f, 0f)
     private var arrayIndex: Int = 0
     private var state = APPEARING
-    private var currentParticleActIndex = 0
+    internal var currentParticleActIndex = 0
 
     val i: Int get() = arrayIndex
 
@@ -49,17 +48,7 @@ class Gum private constructor() {
         }
     }
 
-    fun clickDetect(x: Float, y: Float, onSelect: (Gum) -> Unit): Boolean {
-        if (x in pos.xf..(pos.xf + dim.wf) && y in pos.yf..(pos.yf + dim.hf)) {
-            selected = true
-            innerParticles.forEach {
-                it.index = Shades.MAX_COLOR_INDEX
-            }
-            onSelect.invoke(this)
-            return true
-        }
-        return false
-    }
+    fun clickDetect(x: Float, y: Float): Boolean = x in pos.xf..(pos.xf + dim.wf) && y in pos.yf..(pos.yf + dim.hf)
 
     fun drawSelected(batch: SpriteBatch, image: Texture) {
 //        batch.packedColor = shades.next().f
@@ -73,25 +62,14 @@ class Gum private constructor() {
         val tempIndex = other.arrayIndex
         other.arrayIndex = arrayIndex
         arrayIndex = tempIndex
-        selected = false
     }
     fun beginMerge() {
-        state = MERGING
+        updateState(MERGED)
+    }
+    fun updateState(newState: GumState) {
+        state = newState
     }
 
-    private fun index(index: Int): Gum {
-        this.arrayIndex = index
-        return this
-    }
-    private fun updatePos(newX: Int, newY: Int): Gum {
-        pos.update(newX, newY)
-        return this
-    }
-
-    private fun initDone(): Gum {
-        state = IN_GAME
-        return this
-    }
     fun sameTypeAs(gum: Gum): Boolean = gum.shades == shades
     fun mergeableState(): Boolean = state.mergeable
 
@@ -108,10 +86,11 @@ class Gum private constructor() {
             }
         }
         fun obtain(x: Int, y: Int, index: Int): Gum {
-            return pool.obtain()
-                .updatePos(x, y)
-                .index(index)
-                .initDone()
+            val g =  pool.obtain()
+            g.pos.update(x, y)
+            g.arrayIndex = index
+            g.updateState(IN_GAME)
+            return g
         }
     }
 }

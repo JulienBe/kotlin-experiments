@@ -4,6 +4,10 @@ import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import ktx.collections.GdxArray
 
+/**
+ * Due to the necessity of coherents effects, it will be easier to handle drawing and triggering effects from this class
+ * Gum's particles will still handle the basic behavior of coming back to the base state
+ */
 class GumField(private val gumPerW: Int, private val gumPerH: Int) {
 
     private val fieldGums = Array(gumPerW * gumPerH) { Gum.none }
@@ -11,6 +15,7 @@ class GumField(private val gumPerW: Int, private val gumPerH: Int) {
     private var selectedGum = Gum.none
     private var dirty = true
     private val mergePeriodic = PeriodicAction(MERGE_CHECK_DELAY) { lookForMerges() }
+    private val dropDownPeriodic = PeriodicAction(DROP_DOWN_DELAY) { dropDown() }
 
     init {
         for (y in 0 until gumPerH)
@@ -28,17 +33,21 @@ class GumField(private val gumPerW: Int, private val gumPerH: Int) {
 
     fun clicked(xClick: Float, yClick: Float) {
         for (gum in fieldGums) {
-            val clicked = gum.clickDetect(xClick, yClick) {
-                selectedGum = if (selectedGum == it) {
-                    Gum.none
+            if (gum.clickDetect(xClick, yClick)) {
+                if (selectedGum == gum) {
+                    selectedGum = Gum.none
                 } else if (selectedGum != Gum.none) {
-                    swapGums(it)
-                    Gum.none
+                    swapGums(gum)
+                    selectedGum = Gum.none
                 } else {
-                    it
+                    selectedGum = gum
+                    gum.innerParticles.forEach {
+                        it.index = Shades.MAX_COLOR_INDEX
+                    }
+                    gum.currentParticleActIndex = 0
                 }
+                break
             }
-            if (clicked) break
         }
     }
 
@@ -80,6 +89,9 @@ class GumField(private val gumPerW: Int, private val gumPerH: Int) {
         }
     }
 
+    private fun dropDown() {
+    }
+
     /**
      * Checks if the pattern matches the current gum
      * @return true if the pattern matches, false otherwise
@@ -112,5 +124,6 @@ class GumField(private val gumPerW: Int, private val gumPerH: Int) {
 
     companion object {
         const val MERGE_CHECK_DELAY = 1000L
+        const val DROP_DOWN_DELAY = 1000L
     }
 }
