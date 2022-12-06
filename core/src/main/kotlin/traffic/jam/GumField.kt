@@ -23,10 +23,6 @@ class GumField(gumPerW: Int, gumPerH: Int) {
                 gumArray.add(Gum.obtain(x * Gum.dim.w, y * Gum.dim.h, this))
             }
         }
-        MatchPattern.values().forEach {
-            println("Pattern: ${it.name}")
-            it.offsets.forEach { println(it) }
-        }
     }
 
     fun draw(batch: SpriteBatch, image: Texture) {
@@ -67,9 +63,9 @@ class GumField(gumPerW: Int, gumPerH: Int) {
             val gum = gumArray[i]
             if (gum.state.mergeable && gum.isWithinField(Main.screenDim)) {
                 val downGum = getGum(gum.centerX, gum.centerY - Gum.dim.hf)
-                if (gum != null && downGum != null && downGum.state == GumState.MERGED) {
+                if (downGum == null || downGum.state == GumState.MERGING) {
                     gum.updateState(GumState.MOVING)
-                    gum.pos.update(downGum.pos)
+                    gum.pos.update(gum.pos.x, gum.pos.y - Gum.dim.h)
                     gumArray.removeValue(downGum, true)
                     break
                 }
@@ -129,7 +125,7 @@ class GumField(gumPerW: Int, gumPerH: Int) {
     }
 
     fun dropDownCheck() {
-//        dropDownPeriodic.act()
+        dropDownPeriodic.act()
     }
 
     companion object {

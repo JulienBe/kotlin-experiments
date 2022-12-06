@@ -4,30 +4,34 @@ import kotlin.math.abs
 
 class Pos(private var xF: Float, private var yF: Float) {
 
-    private var x = xF.toInt()
-    private var y = yF.toInt()
+    private var X = xF.toInt()
+    private var Y = yF.toInt()
 
     val xf: Float
         get() = xF
     val yf: Float
         get() = yF
+    val x: Int
+        get() = X
+    val y: Int
+        get() = Y
 
     fun update(x: Int, y: Int) {
-        this.x = x
-        this.y = y
+        this.X = x
+        this.Y = y
         this.xF = x.toFloat()
         this.yF = y.toFloat()
     }
     fun update(xf: Float, yf: Float): Pos {
         this.xF = xf
         this.yF = yf
-        this.x = xf.toInt()
-        this.y = yf.toInt()
+        this.X = xf.toInt()
+        this.Y = yf.toInt()
         return this
     }
 
     fun update(pos: Pos) {
-        update(pos.x, pos.y)
+        update(pos.X, pos.Y)
     }
 
     fun copy(): Pos {
@@ -36,13 +40,13 @@ class Pos(private var xF: Float, private var yF: Float) {
 
     fun roughDst(other: Pos): Float = abs(xF - other.xF) + abs(yF - other.yF)
 
-    fun equalInt(pos: Pos): Boolean = x == pos.x && y == pos.y
+    fun equalInt(pos: Pos): Boolean = X == pos.X && Y == pos.Y
 
     override fun toString(): String {
-        return "Pos(xf=$xF, yf=$yF, x=$x, y=$y)"
+        return "Pos(xf=$xF, yf=$yF, x=$X, y=$Y)"
     }
 
-    fun isZero(): Boolean = x == 0 && y == 0
+    fun isZero(): Boolean = X == 0 && Y == 0
     fun contains(xf: Float, yf: Float, dim: Dimension): Boolean = xf > this.xF && xf <= this.xF + dim.wf && yf > this.yF && yf <= this.yF + dim.hf
 
     override fun equals(other: Any?): Boolean {
@@ -51,15 +55,15 @@ class Pos(private var xF: Float, private var yF: Float) {
 
         other as Pos
 
-        if (x != other.x) return false
-        if (y != other.y) return false
+        if (X != other.X) return false
+        if (Y != other.Y) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = x
-        result = 31 * result + y
+        var result = X
+        result = 31 * result + Y
         return result
     }
 }
