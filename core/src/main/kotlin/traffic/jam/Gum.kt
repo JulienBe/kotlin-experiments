@@ -7,7 +7,12 @@ import traffic.jam.GumState.*
 
 class Gum private constructor() {
 
-    private val outlinePos = List((outlineDim.w) * 4) {
+
+    /**
+     * Maybe the state function could actually be just a bunch of periodic that would be different based on the state
+     */
+
+    internal val outlinePos = List((outlineDim.w) * 4) {
         if (it < outlineDim.w)
             Pos(it.toFloat(), 0f)                    // bottom
         else if (it < outlineDim.w * 2)
@@ -17,28 +22,36 @@ class Gum private constructor() {
         else
             Pos(0f, outlineDim.wf - (it - (outlineDim.w * 3)))
     }
-    internal val innerParticles = List(innerDim.w * innerDim.h) {
+    private val innerParticles = List(innerDim.w * innerDim.h) {
         GumParticle(Pos(it % innerDim.wf + 1, (it / innerDim.hf).toInt() + 1f)) // need to clamp it
     }
     private val particlePeriodic = PeriodicAction(PARTICLE_DELAY) { particleAct() }
-    private var shades = Shades.rand()
-    private var pos: Pos = Pos(0f, 0f)
-    private var arrayIndex: Int = 0
-    private var state = APPEARING
-    internal var currentParticleActIndex = 0
-
-    val i: Int get() = arrayIndex
-
-    fun draw(batch: SpriteBatch, image: Texture) {
-        state.draw(this, batch, image)
-    }
+    private val alignPosPeriodic = PeriodicAction(ALIGN_POS_DELAY) { alignPos() }
+    private var currentParticleActIndex = 0
+    private lateinit var gumField: GumField
+    internal var shades = Shades.rand()
+    internal var pos: Pos = Pos(0f, 0f)
+    internal var state = APPEARING
+    val centerX: Float
+        get() = pos.xf + dim.hwF
+    val centerY: Float
+        get() = pos.yf + dim.hhF
 
     fun inGame(batch: SpriteBatch, image: Texture) {
         innerParticles.forEach {
             batch.packedColor = shades.colors[it.index].f
-            batch.draw(image, pos.xf + it.offset.xf, pos.yf + it.offset.yf, 1f, 1f)
+            batch.draw(image, pos.xf + it.pos.xf, pos.yf + it.pos.yf, 1f, 1f)
         }
         particlePeriodic.act()
+    }
+
+    fun moving(batch: SpriteBatch, image: Texture) {
+        innerParticles.forEach {
+            batch.packedColor = shades.colors[it.index].f
+            batch.draw(image, pos.xf + it.pos.xf + it.offset.xf, pos.yf + it.pos.yf + it.offset.yf, 1f, 1f)
+        }
+        particlePeriodic.act()
+        alignPosPeriodic.act()
     }
 
     private fun particleAct() {
@@ -47,52 +60,42 @@ class Gum private constructor() {
             if (p.index > 0) p.index--
         }
     }
-
-    fun clickDetect(x: Float, y: Float): Boolean = x in pos.xf..(pos.xf + dim.wf) && y in pos.yf..(pos.yf + dim.hf)
-
-    fun drawSelected(batch: SpriteBatch, image: Texture) {
-//        batch.packedColor = shades.next().f
-        outlinePos.forEach { batch.draw(image, pos, it) }
+    private fun alignPos() {
+        innerParticles.forEach {
+            it.offset.update(
+                it.offset.xf * 0.97f,
+                it.offset.yf * 0.97f
+            )
+        }
+        if (innerParticles.all { it.offset.isZero() }) {
+            updateState(IN_GAME)
+        }
     }
 
-    fun swapWith(other: Gum) {
-        val temp = other.pos.copy()
-        other.pos.update(pos)
-        pos.update(temp)
-        val tempIndex = other.arrayIndex
-        other.arrayIndex = arrayIndex
-        arrayIndex = tempIndex
-    }
-    fun beginMerge() {
-        updateState(MERGED)
-    }
     fun updateState(newState: GumState) {
         state = newState
     }
 
-    fun sameTypeAs(gum: Gum): Boolean = gum.shades == shades
-    fun mergeableState(): Boolean = state.mergeable
+    fun isWithinField(d: Dimension): Boolean = centerX > 0f && pos.xf <= d.wf && centerY > 0f && pos.yf <= d.hf
 
     companion object {
         const val PARTICLE_DELAY = 16L
+        const val ALIGN_POS_DELAY = 32L
         val dim = Dimension(16)
         val outlineDim = Dimension(dim.w - 1)
         val innerDim = Dimension(outlineDim.w - 1)
-        val none = Gum()
 
         private val pool: Pool<Gum> = object : Pool<Gum>() {
             override fun newObject(): Gum {
                 return Gum()
             }
         }
-        fun obtain(x: Int, y: Int, index: Int): Gum {
+        fun obtain(x: Int, y: Int, gumField: GumField): Gum {
             val g =  pool.obtain()
             g.pos.update(x, y)
-            g.arrayIndex = index
-            g.updateState(IN_GAME)
+            g.updateState(MOVING)
+            g.gumField = gumField
             return g
         }
     }
 }
-
-private fun SpriteBatch.draw(texture: Texture, pos: Pos, offset: Pos) = draw(texture, pos.xf + offset.xf, pos.yf + offset.yf, 1f, 1f)

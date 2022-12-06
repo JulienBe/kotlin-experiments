@@ -19,6 +19,7 @@ class Main : ApplicationAdapter() {
         Gdx.input.inputProcessor = InputHandler(this)
         graphics = Graphics()
         ratio = Dimension(dim.wf / Gdx.graphics.width, dim.hf / Gdx.graphics.height)
+        screenDim = Dimension(Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
     }
 
     override fun render() {
@@ -29,6 +30,7 @@ class Main : ApplicationAdapter() {
                 }
                 State.PLAY -> {
                     gumField.mergeCheck()
+                    gumField.dropDownCheck()
                     gumField.draw(graphics.batch, image)
                 }
                 State.PAUSE -> {
@@ -61,6 +63,7 @@ class Main : ApplicationAdapter() {
         const val SCALE = 5
         val dim: Dimension = Dimension(160, 144)
         var ratio: Dimension = Dimension(160, 144)
+        var screenDim: Dimension = Dimension(-1, -1)
         val gumPerW = dim.w / Gum.dim.w
         val gumPerH = dim.h / Gum.dim.h
     }
