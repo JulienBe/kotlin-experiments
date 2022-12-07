@@ -10,23 +10,23 @@ enum class MatchPattern(seedOffsets: Set<Offset>, swap: Boolean = false) {
 
     HORIZONTAL_5(
         setOf(
-            Offset(setOf(Pos(+1f, 0f), Pos(+2f, 0f), Pos(+3f, 0f), Pos(+4f, 0f))),
-            Offset(setOf(Pos(-1f, 0f), Pos(+1f, 0f), Pos(+2f, 0f), Pos(+3f, 0f))),
-            Offset(setOf(Pos(-2f, 0f), Pos(-1f, 0f), Pos(+1f, 0f), Pos(+2f, 0f))),
+            Offset(setOf(Pair(+1, 0), Pair(+2, 0), Pair(+3, 0), Pair(+4, 0))),
+            Offset(setOf(Pair(-1, 0), Pair(+1, 0), Pair(+2, 0), Pair(+3, 0))),
+            Offset(setOf(Pair(-2, 0), Pair(-1, 0), Pair(+1, 0), Pair(+2, 0))),
         )
     ),
     VERTICAL_5(HORIZONTAL_5.offsets, true),
     HORIZONTAL_4(
         setOf(
-            Offset(setOf(Pos(+1f, 0f), Pos(+2f, 0f), Pos(+3f, 0f))),
-            Offset(setOf(Pos(-2f, 0f), Pos(-1f, 0f), Pos(+1f, 0f))),
+            Offset(setOf(Pair(+1, 0), Pair(+2, 0), Pair(+3, 0))),
+            Offset(setOf(Pair(-2, 0), Pair(-1, 0), Pair(+1, 0))),
         )
     ),
     VERTICAL_4(HORIZONTAL_4.offsets, true),
     HORIZONTAL_3(
         setOf(
-            Offset(setOf(Pos(-1f, 0f), Pos(-2f, 0f))),
-            Offset(setOf(Pos(-1f, 0f), Pos(+1f, 0f))),
+            Offset(setOf(Pair(-1, 0), Pair(-2, 0))),
+            Offset(setOf(Pair(-1, 0), Pair(+1, 0))),
         )
     ),
     VERTICAL_3(HORIZONTAL_3.offsets, true),
@@ -47,16 +47,15 @@ enum class MatchPattern(seedOffsets: Set<Offset>, swap: Boolean = false) {
                 offsets.add(one)
                 if (one != two) offsets.add(two)
             }
-            offsets.forEach { it.normalizeTo(Gum.dim) }
             offsets
         }
     }
 }
 
-data class Offset(val posses: Set<Pos>) {
-    fun opposite(): Offset = Offset(posses.map { pos -> Pos(-pos.xf, -pos.yf) }.toSet())
+data class Offset(val pairs: Set<Pair<Int, Int>>) {
+    fun opposite(): Offset = Offset(pairs.map { p -> Pair(-p.first, -p.second) }.toSet())
 
-    fun swapXY(): Offset = Offset(posses.map { pos -> Pos(pos.yf, pos.xf) }.toSet())
+    fun swapXY(): Offset = Offset(pairs.map { p -> Pair(p.second, p.first) }.toSet())
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -64,15 +63,10 @@ data class Offset(val posses: Set<Pos>) {
 
         other as Offset
 
-        return posses.all { pos -> other.posses.contains(pos) }
+        return pairs.all { p -> other.pairs.contains(p) }
     }
 
     override fun hashCode(): Int {
-        return posses.hashCode()
+        return pairs.hashCode()
     }
-
-    /**
-     * To avoid having to multiply each time by the dim of a gum, we do it here once if the offset is less than the width of a gum.
-     */
-    fun normalizeTo(dim: Dimension) = posses.forEach { pos -> pos.update(pos.xf * dim.wf, pos.yf * dim.h) }
 }

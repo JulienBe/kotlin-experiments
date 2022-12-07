@@ -3,6 +3,8 @@ package traffic.jam
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import ktx.collections.GdxArray
+import traffic.jam.Main.Companion.gumPerH
+import traffic.jam.Main.Companion.gumPerW
 
 /**
  * Due to the necessity of coherent effects, it will be easier to handle drawing and triggering effects from this class
@@ -11,45 +13,54 @@ import ktx.collections.GdxArray
 class GumField(gumPerW: Int, gumPerH: Int) {
 
     private val mergeList = GdxArray<Gum>()
-    private var selectedGum: Gum? = null
+    private var selectedCell: Cell? = null
     private var dirty = true
     private val mergePeriodic = PeriodicAction(MERGE_CHECK_DELAY) { lookForMerges() }
     private val dropDownPeriodic = PeriodicAction(DROP_DOWN_DELAY) { lookForDropDown() }
-    private val gumArray = GdxArray<Gum>(gumPerW * gumPerH)
+    private val cells = Array(gumPerW * gumPerH) {
+        val x = it % gumPerW
+        val y = it / gumPerW
+        Cell(x, y, it).setGum(Gum.obtain(x * Gum.dim.w, y * Gum.dim.h, this))
+    }
 
     init {
-        for (x in 0 until gumPerW) {
-            for (y in 0 until gumPerH) {
-                gumArray.add(Gum.obtain(x * Gum.dim.w, y * Gum.dim.h, this))
-            }
+        MatchPattern.values().forEach {
+            println("Pattern: ${it.name}")
+            it.offsets.forEach { println(it) }
         }
     }
 
     fun draw(batch: SpriteBatch, image: Texture) {
-        gumArray.forEach { it.state.act(it, batch, image) }
-        selectedGum?.outlinePos?.forEach { batch.draw(image, selectedGum!!.pos, it) }
+        cells.forEach { it.draw(batch, image) }
+        selectedCell?.drawOutline(batch, image)
     }
 
-    private fun getGum(x: Float, y: Float): Gum? = gumArray.firstOrNull { it.pos.contains(x, y, Gum.dim) }
-
     fun clicked(xClick: Float, yClick: Float) {
-        val gum = getGum(xClick, yClick)
-        if (gum != null) {
-            selectedGum = if (selectedGum == gum) {     // Clicked on the same gum, unselect
+        val clickedCell = getCell((xClick / Gum.dim.wf).toInt(), (yClick / Gum.dim.hf).toInt())
+        val clickedGum = clickedCell.getGum
+        if (clickedGum != null) {
+            selectedCell = if (selectedCell == clickedCell) {     // Clicked on the same gum, unselect
                 null
-            } else if (selectedGum != null) {           // Clicked on a different gum, try to merge
-                swapGums(selectedGum!!, gum)
+            } else if (selectedCell != null) {           // Clicked on a different gum, try to merge
+                swapGums(selectedCell!!, clickedCell)
                 null
             } else {                                    // Clicked on a gum, select
-                gum
+                clickedCell
             }
         }
     }
 
-    private fun swapGums(it: Gum, other: Gum) {
-        val oldPos = it.pos.copy()
-        it.pos.update(other.pos)
-        other.pos.update(oldPos)
+    private fun isValidCell(x: Int, y: Int): Boolean = x in 0 until gumPerW && y in 0 until gumPerH
+    private fun getCell(x: Int, y: Int): Cell = cells[x + y * gumPerW]
+
+    private fun swapGums(it: Cell, other: Cell) {
+        val itGum = it.getGum!!
+        val otherGum = other.getGum!!
+        val oldPos = itGum.pos.copy()
+        itGum.pos.update(otherGum.pos)
+        otherGum.pos.update(oldPos)
+        it.setGum(otherGum)
+        other.setGum(itGum)
         dirty = true
     }
 
@@ -59,14 +70,17 @@ class GumField(gumPerW: Int, gumPerH: Int) {
     }
 
     private fun lookForDropDown() {
-        for (i in 0 until gumArray.size) {
-            val gum = gumArray[i]
-            if (gum.state.mergeable && gum.isWithinField(Main.screenDim)) {
-                val downGum = getGum(gum.centerX, gum.centerY - Gum.dim.hf)
-                if (downGum == null || downGum.state == GumState.MERGING) {
+        for (i in gumPerW until cells.size) {
+            val cell = cells[i]
+            val gum = cell.getGum
+            if (gum != null && gum.state.mergeable) {
+                val downCell = getCell(cell.x, cell.y - 1)
+                if (downCell.getGum == null || downCell.getGum!!.state == GumState.MERGING) {
                     gum.updateState(GumState.MOVING)
                     gum.pos.update(gum.pos.x, gum.pos.y - Gum.dim.h)
-                    gumArray.removeValue(downGum, true)
+                    cell.setGum(null)
+                    downCell.setGum(gum)
+                    dirty = true
                     break
                 }
             }
@@ -78,11 +92,11 @@ class GumField(gumPerW: Int, gumPerH: Int) {
         // maybe sort it to do the break in a coherent way. Would also help with proximity checks
         // no stream because of the break
         // could always do a dirty based on the gum if that becomes a problem
-        for (i in 0 until gumArray.size) {
-            val gum = gumArray[i]
-            if (gum.state.mergeable && gum.isWithinField(Main.screenDim)) {
+        cells.forEach { cell ->
+            val gum = cell.getGum
+            if (gum != null && gum.state.mergeable && gum.isWithinField(Main.screenDim)) {
                 MatchPattern.values().forEach { pattern ->
-                    if (checkPattern(pattern, gum)) {
+                    if (checkPattern(pattern, cell)) {
                         dirty = true
                         return
                     }
@@ -96,12 +110,17 @@ class GumField(gumPerW: Int, gumPerH: Int) {
      * Checks if the pattern matches the current gum
      * @return true if the pattern matches, false otherwise
      */
-    private fun checkPattern(pattern: MatchPattern, currentGum: Gum): Boolean {
+    private fun checkPattern(pattern: MatchPattern, currentCell: Cell): Boolean {
+        val gum = currentCell.getGum!!
         pattern.offsets.forEach { offset ->
             mergeList.clear()
-            val allMatches = offset.posses.all { pos ->
-                val otherGum = getGum(currentGum.centerX + pos.xf, currentGum.centerY + pos.yf)
-                if (shouldMerge(currentGum, otherGum)) {
+            val allMatches = offset.pairs.all { p ->
+                val otherX = currentCell.x + p.first
+                val otherY = currentCell.y + p.second
+                if (!isValidCell(otherX, otherY))
+                    return false
+                val otherGum = getCell(otherX, otherY).getGum
+                if (shouldMerge(gum, otherGum)) {
                     mergeList.add(otherGum!!)
                     true
                 } else {
@@ -109,7 +128,7 @@ class GumField(gumPerW: Int, gumPerH: Int) {
                 }
             }
             if (allMatches) {
-                mergeList.add(currentGum)
+                mergeList.add(gum)
                 mergeList.forEach { it.updateState(GumState.MERGING) }
                 return true
             }
@@ -133,5 +152,3 @@ class GumField(gumPerW: Int, gumPerH: Int) {
         const val DROP_DOWN_DELAY = 100L
     }
 }
-
-private fun SpriteBatch.draw(texture: Texture, pos: Pos, offset: Pos) = draw(texture, pos.xf + offset.xf, pos.yf + offset.yf, 1f, 1f)
