@@ -19,19 +19,19 @@ class Pos(private var xF: Float, private var yF: Float) {
     fun update(x: Int, y: Int) {
         this.X = x
         this.Y = y
-        this.xF = x.toFloat()
-        this.yF = y.toFloat()
+        this.xF = X.toFloat()
+        this.yF = Y.toFloat()
     }
     fun update(xf: Float, yf: Float): Pos {
         this.xF = xf
         this.yF = yf
-        this.X = xf.toInt()
-        this.Y = yf.toInt()
+        this.X = xF.toInt()
+        this.Y = yF.toInt()
         return this
     }
 
     fun update(pos: Pos) {
-        update(pos.X, pos.Y)
+        update(pos.xf, pos.yf)
     }
 
     fun copy(): Pos {

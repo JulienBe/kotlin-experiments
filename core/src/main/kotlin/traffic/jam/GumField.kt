@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import ktx.collections.GdxArray
 import traffic.jam.Main.Companion.gumPerH
 import traffic.jam.Main.Companion.gumPerW
+import java.util.*
 
 /**
  * Due to the necessity of coherent effects, it will be easier to handle drawing and triggering effects from this class
@@ -14,20 +15,12 @@ class GumField(gumPerW: Int, gumPerH: Int) {
 
     private val mergeList = GdxArray<Gum>()
     private var selectedCell: Cell? = null
-    private var dirty = true
     private val mergePeriodic = PeriodicAction(MERGE_CHECK_DELAY) { lookForMerges() }
     private val dropDownPeriodic = PeriodicAction(DROP_DOWN_DELAY) { lookForDropDown() }
     private val cells = Array(gumPerW * gumPerH) {
         val x = it % gumPerW
         val y = it / gumPerW
         Cell(x, y, it).setGum(Gum.obtain(x * Gum.dim.w, y * Gum.dim.h, this))
-    }
-
-    init {
-        MatchPattern.values().forEach {
-            println("Pattern: ${it.name}")
-            it.offsets.forEach { println(it) }
-        }
     }
 
     fun draw(batch: SpriteBatch, image: Texture) {
@@ -61,26 +54,26 @@ class GumField(gumPerW: Int, gumPerH: Int) {
         otherGum.pos.update(oldPos)
         it.setGum(otherGum)
         other.setGum(itGum)
-        dirty = true
     }
 
     fun mergeCheck() {
-        if (dirty)
-            mergePeriodic.act()
+        mergePeriodic.act()
     }
 
     private fun lookForDropDown() {
         for (i in gumPerW until cells.size) {
             val cell = cells[i]
             val gum = cell.getGum
-            if (gum != null && gum.state.mergeable) {
+            if (gum != null && gum.state.downable) {
                 val downCell = getCell(cell.x, cell.y - 1)
                 if (downCell.getGum == null || downCell.getGum!!.state == GumState.MERGING) {
                     gum.updateState(GumState.MOVING)
                     gum.pos.update(gum.pos.x, gum.pos.y - Gum.dim.h)
+                    gum.innerParticles.forEach {
+                        it.offsetY += Gum.dim.hhF + (rnd.nextGaussian() * 2f).toFloat()
+                    }
                     cell.setGum(null)
                     downCell.setGum(gum)
-                    dirty = true
                     break
                 }
             }
@@ -88,7 +81,6 @@ class GumField(gumPerW: Int, gumPerH: Int) {
     }
 
     private fun lookForMerges() {
-        dirty = false
         // maybe sort it to do the break in a coherent way. Would also help with proximity checks
         // no stream because of the break
         // could always do a dirty based on the gum if that becomes a problem
@@ -96,10 +88,8 @@ class GumField(gumPerW: Int, gumPerH: Int) {
             val gum = cell.getGum
             if (gum != null && gum.state.mergeable && gum.isWithinField(Main.screenDim)) {
                 MatchPattern.values().forEach { pattern ->
-                    if (checkPattern(pattern, cell)) {
-                        dirty = true
+                    if (checkPattern(pattern, cell))
                         return
-                    }
                 }
             }
         }
@@ -148,7 +138,8 @@ class GumField(gumPerW: Int, gumPerH: Int) {
     }
 
     companion object {
-        const val MERGE_CHECK_DELAY = 1000L
-        const val DROP_DOWN_DELAY = 100L
+        const val MERGE_CHECK_DELAY = 500L
+        const val DROP_DOWN_DELAY = 50L
+        val rnd = Random(0)
     }
 }
