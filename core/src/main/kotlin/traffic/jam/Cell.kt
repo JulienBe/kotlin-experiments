@@ -21,8 +21,8 @@ class Cell(val x: Int, val y: Int, index: Int) {
 
     fun drawOutline(batch: SpriteBatch, texture: Texture) {
         if (gum != null)
-            gum!!.outlinePos.forEach { batch.draw(texture, gum!!.pos, it) }
+            gum!!.outlinePos.forEach { batch.draw(texture, x * Gum.dim.wf, y * Gum.dim.hf, it) }
     }
 }
 
-private fun SpriteBatch.draw(texture: Texture, pos: Pos, offset: Pos) = draw(texture, pos.xf + offset.xf, pos.yf + offset.yf, 1f, 1f)
+private fun SpriteBatch.draw(texture: Texture, x: Float, y: Float, offset: Pos) = draw(texture, x + offset.xf, y + offset.yf, 1f, 1f)

@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.utils.Pool
 import traffic.jam.GumState.*
+import kotlin.math.abs
 
 class Gum private constructor() {
 
@@ -26,20 +27,14 @@ class Gum private constructor() {
     }
     private val particlePeriodic = PeriodicAction(PARTICLE_DELAY) { particleAct() }
     private val alignPosPeriodic = PeriodicAction(ALIGN_POS_DELAY) { alignPos() }
-    private var currentParticleActIndex = 0
     private lateinit var gumField: GumField
     internal var shades = Shades.rand()
-    internal var pos: Pos = Pos(0f, 0f)
     internal var state = MOVING
-    private val centerX: Float
-        get() = pos.xf + dim.hwF
-    private val centerY: Float
-        get() = pos.yf + dim.hhF
 
     fun inGame(batch: SpriteBatch, image: Texture) {
         innerParticles.forEach {
             batch.packedColor = shades.colors[it.index].f
-            batch.draw(image, pos.xf + it.anchorX, pos.yf + it.anchorY, 1f, 1f)
+            batch.draw(image, it.anchorX, it.anchorY, 1f, 1f)
         }
         particlePeriodic.act()
     }
@@ -47,40 +42,43 @@ class Gum private constructor() {
     fun moving(batch: SpriteBatch, image: Texture) {
         innerParticles.forEach {
             batch.packedColor = shades.colors[it.index].f
-            batch.draw(image, pos.xf + it.anchorX + it.offsetX, pos.yf + it.anchorY + it.offsetY, 1f, 1f)
+            batch.draw(image, it.actualX, it.actualY, 1f, 1f)
         }
         particlePeriodic.act()
         alignPosPeriodic.act()
     }
 
     private fun particleAct() {
-        for (i in 0..6) {
-            val p = innerParticles[currentParticleActIndex++ % innerParticles.size]
-            if (p.index > 1) p.index--
+        for (i in 0..24) {
+            val p = innerParticles.random()
+            if (p.index > 1) p.index-- else p.index = 1
         }
     }
     private fun alignPos() {
-        innerParticles.forEach {
-//            if (it.verticalMove) {
-                it.offsetY *= 0.97f
-//            } else {
-                it.offsetX *= 0.97f
-//            }
-//            if (it.ticks++ > 60) {
-//                it.verticalMove = !it.verticalMove
-//                it.ticks = 0
-//            }
+        for (i in 0..20) {
+            var it = innerParticles.random()
+            for (j in 0..3)
+                if (abs(it.actualX - it.anchorX) < 1f && abs(it.actualY - it.anchorY) < 1f)
+                    it = innerParticles.random()
+            it.actualX -= (it.actualX - it.anchorX) * 0.15f
+            it.actualY -= (it.actualY - it.anchorY) * 0.15f
         }
-        if (innerParticles.all { it.offsetX < 0.3f && it.offsetY < 0.3f }) {
+        if (innerParticles.all {
+                abs(it.actualX - it.anchorX) < 1f && abs(it.actualY - it.anchorY) < 1f }) {
             updateState(IN_GAME)
+        }
+    }
+
+    fun alignParticlesTo(x: Float, y: Float) {
+        innerParticles.forEachIndexed { index, gumParticle ->
+            gumParticle.anchorX = x + (index % innerDim.wf + 1f)
+            gumParticle.anchorY = y + (index / innerDim.hf + 1f)
         }
     }
 
     fun updateState(newState: GumState) {
         state = newState
     }
-
-    fun isWithinField(d: Dimension): Boolean = centerX > 0f && pos.xf <= d.wf && centerY > 0f && pos.yf <= d.hf
 
     companion object {
         const val PARTICLE_DELAY = 16L
@@ -96,7 +94,7 @@ class Gum private constructor() {
         }
         fun obtain(x: Int, y: Int, gumField: GumField): Gum {
             val g =  pool.obtain()
-            g.pos.update(x, y)
+            g.alignParticlesTo(x.toFloat(), y.toFloat())
             g.updateState(MOVING)
             g.gumField = gumField
             return g
