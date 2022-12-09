@@ -71,9 +71,9 @@ class GumField(gumPerW: Int, gumPerH: Int) {
         for (i in gumPerW until cells.size) {
             val cell = cells[i]
             val gum = cell.getGum
-            if (gum != null && gum.state.downable) {
+            if (gum != null && gum.getState.downable) {
                 val downCell = getCell(cell.x, cell.y - 1)
-                if (downCell.getGum == null || downCell.getGum!!.state == GumState.MERGING) {
+                if (downCell.getGum == null || downCell.getGum!!.getState == GumState.TO_COLLECT) {
                     cell.setGum(null)
                     moveGumTo(gum, downCell)
                     break
@@ -92,7 +92,7 @@ class GumField(gumPerW: Int, gumPerH: Int) {
 //        if (cells.all { it.getGum == null || it.getGum!!.state.mergeable })
             cells.forEach { cell ->
                 val gum = cell.getGum
-                if (gum != null && gum.state.mergeable) {
+                if (gum != null && gum.getState.mergeable) {
                     MatchPattern.values().forEach { pattern ->
                         if (checkPattern(pattern, cell))
                             return
@@ -136,11 +136,15 @@ class GumField(gumPerW: Int, gumPerH: Int) {
      * Origin is expected to be mergeable and within the field
      */
     private fun shouldMerge(origin: Gum, other: Gum?): Boolean {
-        return other != null && other.shades == origin.shades && other.state.mergeable
+        return other != null && other.shades == origin.shades && other.getState.mergeable
     }
 
     fun dropDownCheck() {
         dropDownPeriodic.act()
+    }
+
+    fun trimField() {
+
     }
 
     companion object {

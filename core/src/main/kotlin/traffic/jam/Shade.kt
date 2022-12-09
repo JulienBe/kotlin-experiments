@@ -5,7 +5,7 @@ import traffic.jam.Main.Companion.COLORS_PER_SHADE
 
 enum class Shade(red: Int, green: Int, blue: Int) {
 
-//    BLACK(        0,   0, 0),  // 0
+    BLACK(        0,   0, 0),  // 0
     DARK_GREY(   95,  87, 79), // 182
     LIGHT_GREY( 194, 195, 199),// 389
     WHITE(      255, 241, 232),// 496
@@ -33,10 +33,10 @@ enum class Shade(red: Int, green: Int, blue: Int) {
     }
 }
 enum class Shades(val colors: Array<Shade>) {
-    YELLOW(arrayOf(Shade.YELLOW, Shade.ORANGE, Shade.BROWN, Shade.DARK_PURPLE, Shade.DARK_BLUE)),
-    WHITE(arrayOf(Shade.WHITE, Shade.LIGHT_GREY, Shade.LAVENDER, Shade.DARK_GREY, Shade.DARK_BLUE)),
-    PINK(arrayOf(Shade.PINK, Shade.PINK_SKIN, Shade.RED, Shade.DARK_PURPLE, Shade.DARK_BLUE)),
-    GREEN(arrayOf(Shade.GREEN, Shade.DARK_GREEN, Shade.LAVENDER, Shade.BLUE, Shade.DARK_BLUE));
+    YELLOW(arrayOf(Shade.YELLOW, Shade.ORANGE, Shade.BROWN, Shade.DARK_PURPLE, Shade.DARK_BLUE, Shade.BLACK)),
+    WHITE(arrayOf(Shade.WHITE, Shade.LIGHT_GREY, Shade.LAVENDER, Shade.DARK_GREY, Shade.DARK_BLUE, Shade.BLACK)),
+    PINK(arrayOf(Shade.PINK, Shade.PINK_SKIN, Shade.RED, Shade.DARK_PURPLE, Shade.DARK_BLUE, Shade.BLACK)),
+    GREEN(arrayOf(Shade.GREEN, Shade.DARK_GREEN, Shade.LAVENDER, Shade.BLUE, Shade.DARK_BLUE, Shade.BLACK));
     ;
 
     init {

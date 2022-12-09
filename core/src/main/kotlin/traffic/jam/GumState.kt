@@ -8,6 +8,6 @@ enum class GumState(val mergeable: Boolean, val downable: Boolean, val act: (Gum
     DISAPPEARING(false, false, { _, _, _ -> }),
     MOVING      (false, true,   Gum::moving),
     IN_GAME     (true,  true,   Gum::inGame),
-    MERGING     (false, false, { _, _, _ -> }),
-    MERGED      (false, false, { _, _, _ -> });
+    MERGING     (false, false,  Gum::merging),
+    TO_COLLECT      (false, false, { _, _, _ -> });
 }

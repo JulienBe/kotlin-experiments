@@ -29,6 +29,7 @@ class Main : ApplicationAdapter() {
 //                    drawText("Press space to start", 0f, 0f)
                 }
                 State.PLAY -> {
+                    gumField.trimField()
                     gumField.mergeCheck()
                     gumField.dropDownCheck()
                     gumField.draw(graphics.batch, image)
@@ -59,7 +60,7 @@ class Main : ApplicationAdapter() {
     }
 
     companion object {
-        const val COLORS_PER_SHADE: Int = 5
+        const val COLORS_PER_SHADE: Int = 6
         const val SCALE = 5
         val dim: Dimension = Dimension(160, 144)
         var ratio: Dimension = Dimension(160, 144)

@@ -16,7 +16,7 @@ class Cell(val x: Int, val y: Int, index: Int) {
 
     fun draw(batch: SpriteBatch, texture: Texture) {
         if (gum != null)
-            gum!!.state.act(gum!!, batch, texture)
+            gum!!.getState.act(gum!!, batch, texture)
     }
 
     fun drawOutline(batch: SpriteBatch, texture: Texture) {
