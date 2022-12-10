@@ -3,17 +3,18 @@ package traffic.jam
 import java.util.*
 
 class GumParticle(internal var anchorX: Float, internal var anchorY: Float) {
-    var actualX = anchorX
-    var actualY = anchorY
+    var actualX: Float = (rnd.nextGaussian() * Main.dim.wf * 2f).toFloat()
+    var actualY: Float = (rnd.nextGaussian() * Main.dim.hf * 2f).toFloat()
     var verticalMove = rnd.nextBoolean()
     var ticks = rnd.nextInt(100)
 
     init {
         if (rnd.nextBoolean())
-            actualX += (rnd.nextGaussian() * INIT_OFFSET).toFloat()
+            actualX *= -1f
         else
-            actualY += (rnd.nextGaussian() * INIT_OFFSET).toFloat()
+            actualY *= -1f
     }
+
     var index = Shades.MAX_COLOR_INDEX
 
     companion object {
