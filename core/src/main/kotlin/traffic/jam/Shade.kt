@@ -33,10 +33,11 @@ enum class Shade(red: Int, green: Int, blue: Int) {
     }
 }
 enum class Shades(val colors: Array<Shade>) {
-    YELLOW(arrayOf(Shade.YELLOW, Shade.ORANGE, Shade.BROWN, Shade.DARK_PURPLE, Shade.DARK_BLUE, Shade.BLACK)),
-    WHITE(arrayOf(Shade.WHITE, Shade.LIGHT_GREY, Shade.LAVENDER, Shade.DARK_GREY, Shade.DARK_BLUE, Shade.BLACK)),
-    PINK(arrayOf(Shade.PINK, Shade.PINK_SKIN, Shade.RED, Shade.DARK_PURPLE, Shade.DARK_BLUE, Shade.BLACK)),
-    GREEN(arrayOf(Shade.GREEN, Shade.DARK_GREEN, Shade.LAVENDER, Shade.BLUE, Shade.DARK_BLUE, Shade.BLACK));
+    YELLOW(arrayOf( Shade.YELLOW,   Shade.ORANGE,       Shade.BROWN,        Shade.DARK_PURPLE,  Shade.DARK_BLUE, Shade.BLACK)),
+    PINK(arrayOf(   Shade.PINK,     Shade.PINK_SKIN,    Shade.RED,          Shade.DARK_PURPLE,  Shade.DARK_BLUE, Shade.BLACK)),
+    WHITE(arrayOf(  Shade.WHITE,    Shade.LIGHT_GREY,   Shade.LAVENDER,     Shade.DARK_GREY,    Shade.DARK_BLUE, Shade.BLACK)),
+    GREEN(arrayOf(  Shade.YELLOW,   Shade.GREEN,        Shade.DARK_GREEN,   Shade.DARK_PURPLE,  Shade.DARK_BLUE, Shade.BLACK)),
+    BLUE(arrayOf(   Shade.PINK,     Shade.BLUE,         Shade.LAVENDER,     Shade.DARK_PURPLE,  Shade.DARK_BLUE, Shade.BLACK)),
     ;
 
     init {
