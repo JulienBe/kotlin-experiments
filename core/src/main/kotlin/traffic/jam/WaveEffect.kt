@@ -18,8 +18,8 @@ class WaveEffect() {
         index = 0
         this.particles = particles.sortedBy {
             Vector2.dst2(it.actualX, it.actualY, centerX, centerY)
-        }
-        waveSize = particles.size / 15
+        }.subList(0, particles.size / 2)
+        waveSize = this.particles.size / 15
         return this
     }
 
