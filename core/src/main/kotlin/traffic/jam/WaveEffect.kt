@@ -17,7 +17,7 @@ class WaveEffect() {
         this.centerY = centerY
         index = 0
         this.particles = particles.sortedBy {
-            Vector2.dst2(it.actualX, it.actualY, centerX, centerY)
+            Vector2.dst2(it.actualX.get(), it.actualY.get(), centerX, centerY)
         }.subList(0, particles.size / 2)
         waveSize = this.particles.size / 15
         return this
@@ -26,10 +26,10 @@ class WaveEffect() {
     fun act() {
         for (i in 0..waveSize) {
             if (index < particles.size) {
-                particles[index++].index = 0
+                particles[index++].index.addVal(0)
             }
             if (index + waveSize < particles.size)
-                particles[index + waveSize].index = Shades.MAX_COLOR_INDEX
+                particles[index + waveSize].index.addVal(Shades.MAX_COLOR_INDEX)
 
         }
     }

@@ -1,16 +1,17 @@
 package traffic.jam
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Pool
 import ktx.collections.sortBy
 import ktx.collections.toGdxArray
+import traffic.jam.GumParticle.Companion.downIter
 import traffic.jam.GumState.*
 import kotlin.math.abs
 
 class Gum private constructor() {
-
 
     /**
      * Maybe the state function could actually be just a bunch of periodic that would be different based on the state
@@ -31,6 +32,7 @@ class Gum private constructor() {
     private val baseColorPeriodic = PeriodicAction(BASE_COLOR_DELAY) { toBaseColor() }
     private val alignPosPeriodic = PeriodicAction(ALIGN_POS_DELAY) { alignPos() }
     private val toDarkPeriodic = PeriodicAction(TO_DARK_DELAY) { toDark() }
+    private val scramblePeriodic = PeriodicAction(SCRAMBLE_DELAY, true) { innerParticles.random() }
     private lateinit var gumField: GumField
     internal var shades = Shades.rand()
     private var state = MOVING
@@ -39,31 +41,30 @@ class Gum private constructor() {
 
     fun inGame(batch: SpriteBatch, image: Texture) {
         innerParticles.forEach {
-            batch.packedColor = shades.colors[it.index].f
+            batch.packedColor = shades.colors[it.i].f
             batch.draw(image, it.anchorX, it.anchorY, 1f, 1f)
         }
         baseColorPeriodic.act()
     }
 
     fun moving(batch: SpriteBatch, image: Texture) {
-        innerParticles.forEach {
-            batch.packedColor = shades.colors[it.index].f
-            batch.draw(image, it.actualX, it.actualY, 1f, 1f)
+        downIter.forEach { i ->
+            innerParticles.forEach { gum ->
+                batch.packedColor = shades.colors[Shades.TARGET_COLOR + i].f
+                batch.draw(image, gum.actualX.get(-i), gum.actualY.get(-i), 1f, 1f)
+            }
         }
-        baseColorPeriodic.act()
         alignPosPeriodic.act()
-        if (innerParticles.all { abs(it.actualX - it.anchorX) < 1f && abs(it.actualY - it.anchorY) < 1f }) {
-            updateState(IN_GAME)
-        }
+        scramblePeriodic.act()
     }
 
     fun merging(batch: SpriteBatch, image: Texture) {
-        innerParticles.forEach {
-            batch.packedColor = shades.colors[it.index].f
-            batch.draw(image, it.actualX, it.actualY, 1f, 1f)
-        }
         toDarkPeriodic.act()
-        if (innerParticles.all { it.index == Shades.MAX_COLOR_INDEX }) {
+        innerParticles.forEach {
+            batch.packedColor = shades.colors[it.i].f
+            batch.draw(image, it.actualX.get(), it.actualY.get(), 1f, 1f)
+        }
+        if (innerParticles.all { it.i == Shades.MAX_COLOR_INDEX }) {
             updateState(TO_COLLECT)
         }
     }
@@ -71,11 +72,11 @@ class Gum private constructor() {
     private fun changeByPatches(numberToActOn: Int, termination: (GumParticle) -> Boolean, action: (GumParticle) -> Unit) {
         var i = 0
         var p = innerParticles.random()
-        while (termination.invoke(p) && i++ < 10) {
+        while (termination.invoke(p) && i++ < 20) {
             p = innerParticles.random()
         }
         innerParticles.sortBy {
-            Vector2.dst2(it.actualX, it.actualY, p.actualX, p.actualY)
+            Vector2.dst2(it.actualX.get(), it.actualY.get(), p.actualX.get(), p.actualY.get())
         }
         for (j in 0..numberToActOn) {
             p = innerParticles[j]
@@ -85,28 +86,48 @@ class Gum private constructor() {
     }
 
     private fun toDark() {
-        changeByPatches(10, { it.index == Shades.MAX_COLOR_INDEX }) {
-            it.index++
+        changeByPatches(40, { it.i == Shades.MAX_COLOR_INDEX }) {
+            it.index.addVal(it.i + 1)
         }
     }
-
     private fun toBaseColor() {
-        for (i in 0..24) {
-            val p = innerParticles.random()
-            if (p.index > 1) p.index-- else p.index = 1
+        changeByPatches(24, { it.i == 1 } ) {
+            if (it.i > 1) it.index.addVal(it.i - 1) else it.index.addVal(1)
         }
     }
+    
     private fun alignPos() {
-        innerParticles.sortBy {
-            -Vector2.dst2(it.actualX, it.actualY, it.anchorX, it.anchorY)
-        }
-        for (i in 0..23) {
+//        val first = innerParticles
+//        innerParticles.forEach { p ->
+        var allSet = true
+        for (i in 0..innerParticles.size / 2) {
+//            val p = innerParticles.random()
             val p = innerParticles[i]
-            if (p.actualX < p.anchorX)  p.actualX -= ((p.actualX - p.anchorX) * 0.12f) - 0.30f
-            else                        p.actualX -= ((p.actualX - p.anchorX) * 0.12f) + 0.30f
-            if (p.actualY < p.anchorY)  p.actualY -= ((p.actualY - p.anchorY) * 0.16f) - 0.28f
-            else                        p.actualY -= ((p.actualY - p.anchorY) * 0.16f) + 0.28f
+            var newX = p.actualX.get() + (p.anchorX - p.actualX.get()) / 40f
+            var newY = p.actualY.get() + (p.anchorY - p.actualY.get()) / 40f
+            if (p.actualX.get() < p.anchorX)
+                newX += 1f
+            else
+                newX -= 1f
+            if (p.actualY.get() < p.anchorY)
+                newY += 1f
+            else
+                newY -= 1f
+            if (abs(p.actualX.get() - p.anchorX) < 1f)
+                newX = p.anchorX
+            else
+                allSet = false
+            if (abs(p.actualY.get() - p.anchorY) < 1f)
+                newY = p.anchorY
+            else
+                allSet = false
+            p.actualX.addVal(newX)
+            p.actualY.addVal(newY)
         }
+        if (allSet)
+            innerParticles.reverse()
+//        innerParticles.first().actualX.add(innerParticles.first().anchorX)
+//        innerParticles.first().actualY.add(innerParticles.first().anchorY)
     }
 
     fun alignParticlesTo(x: Float, y: Float) {
@@ -124,6 +145,7 @@ class Gum private constructor() {
         const val BASE_COLOR_DELAY = 16L
         const val ALIGN_POS_DELAY = 16L
         const val TO_DARK_DELAY = 24L
+        const val SCRAMBLE_DELAY = 500L
         val dim = Dimension(16)
         val outlineDim = Dimension(dim.w - 1)
         val innerDim = Dimension(outlineDim.w - 1)
@@ -137,6 +159,9 @@ class Gum private constructor() {
             val g =  pool.obtain()
             g.alignParticlesTo(x.toFloat(), y.toFloat())
             g.updateState(MOVING)
+            g.innerParticles.sortBy {
+                Vector2.dst2(it.actualX.get(), it.actualY.get(), it.anchorX, it.anchorY)
+            }
             g.gumField = gumField
             return g
         }

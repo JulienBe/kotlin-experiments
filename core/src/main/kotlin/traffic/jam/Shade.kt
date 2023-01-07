@@ -46,6 +46,9 @@ enum class Shades(val colors: Array<Shade>) {
 
     companion object {
         const val MAX_COLOR_INDEX = COLORS_PER_SHADE - 1
+        const val TARGET_COLOR = 1
+        const val EFFECTIVE_COLOR = MAX_COLOR_INDEX - TARGET_COLOR
+        val effectiveColorsIter = MAX_COLOR_INDEX downTo TARGET_COLOR
         fun rand(): Shades {
             return values().random()
         }
